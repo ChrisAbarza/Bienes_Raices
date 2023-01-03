@@ -1,0 +1,36 @@
+{
+  "name": "bienes-raices",
+  "version": "1.0.0",
+  "description": "Proyecto en node",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "server": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChrisAbarza/Bienes_Raices.git"
+  },
+  "keywords": [
+    "MVC",
+    "Pug",
+    "Tailwind",
+    "MySQL",
+    "Sequalize",
+    "Node"
+  ],
+  "author": "Christopher Abarza",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ChrisAbarza/Bienes_Raices/issues"
+  },
+  "homepage": "https://github.com/ChrisAbarza/Bienes_Raices#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "pug": "^3.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
+}
