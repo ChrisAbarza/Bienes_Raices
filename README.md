@@ -8,3 +8,6 @@ mysql
 sequelize
 tailwind
 express-validator
+sequelize hooks
+NodeMailer
+csurf (libreria anti CSRF)
