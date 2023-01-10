@@ -1,8 +1,9 @@
 import { check, validationResult } from "express-validator";
+import bcrypt from "bcrypt";
 
 import Usuario from "../models/Usuario.js";
 import { generarId } from "../helpers/tokens.js";
-import { emailRegistro } from "../helpers/emails.js";
+import { emailRegistro, emailRecuperarPass } from "../helpers/emails.js";
 const formularioLogin = (req, res) => {
     res.render("auth/login", {
         pagina: "Iniciar Sesión",
@@ -97,6 +98,61 @@ const registrar = async (req, res) => {
 const formularioRecuperarPassword = (req, res) => {
     res.render("auth/recuperar-password", {
         pagina: "Recuperar Password",
+        csrfToken: req.csrfToken(),
+    });
+};
+
+const resetPass = async (req, res) => {
+    //extraer los datos
+    const { email } = req.body;
+    //validación de formularios con express validator
+
+    await check("email").isEmail().withMessage("Email inválido").run(req);
+
+    let resultado = validationResult(req);
+
+    //verificar que no hay errores
+    if (!resultado.isEmpty()) {
+        //hay errores
+        return res.render("auth/recuperar-password", {
+            pagina: "Recuperar Password",
+            errores: resultado.array(),
+            csrfToken: req.csrfToken(),
+        });
+    }
+
+    //verificar que el usuario se encuentra registrado en la bd
+    const usuario = await Usuario.findOne({
+        where: { email },
+    });
+
+    if (!usuario) {
+        return res.render("auth/recuperar-password", {
+            pagina: "Recuperar Password",
+            errores: [{ msg: "El usuario no se encuentra registrado" }],
+            csrfToken: req.csrfToken(),
+        });
+    }
+
+    //generar nuevo token y enviar email
+    usuario.token = generarId();
+    //usuario.confirmado = false;
+
+    //actualizar usuario
+    await usuario.save();
+
+    //envia email de confirmacion
+    emailRecuperarPass({
+        nombre: usuario.nombre,
+        email: usuario.email,
+        token: usuario.token,
+    });
+
+    //mostrar mensaje de confirmación
+    res.render("templates/mensaje", {
+        pagina: "Reestablece tu password",
+        mensaje:
+            "hemos enviado un email con las instrucciones, presiona en el enlace",
     });
 };
 
@@ -130,10 +186,80 @@ const confirmar = async (req, res) => {
     });
 };
 
+const comprobarToken = async (req, res) => {
+    //leer loken
+
+    const { token } = req.params;
+
+    const usuario = await Usuario.findOne({ where: { token } });
+
+    if (!usuario) {
+        return res.render("auth/confirmar-cuenta", {
+            pagina: "Error al reestablecer password",
+            mensaje:
+                "Hubo un error al validar la información, intenta nuevamente.",
+            error: true,
+        });
+    }
+
+    res.render("auth/reset-pass", {
+        pagina: "Reestablece tu password",
+        mensaje: "Ingresa tu nuevo password",
+        csrfToken: req.csrfToken(),
+    });
+};
+const nuevoPassword = async (req, res) => {
+    const { password } = req.body;
+    const { token } = req.params;
+
+    await check("password")
+        .isLength({ min: 6 })
+        .withMessage("El password debe ser de al menos 6 carácteres")
+        .run(req);
+
+    await check("repetir_password")
+        .equals(password)
+        .withMessage("Los passwords deben coincidir")
+        .run(req);
+
+    let resultado = validationResult(req);
+
+    //verificar que no hay errores
+    if (!resultado.isEmpty()) {
+        //hay errores
+        return res.render("auth/reset-pass", {
+            pagina: "Reestablece tu password",
+            errores: resultado.array(),
+            csrfToken: req.csrfToken(),
+        });
+    }
+
+    const usuario = await Usuario.findOne({ where: { token } });
+
+    //confirmar la cuenta
+    usuario.token = null;
+    usuario.confirmado = true;
+
+    const salt = await bcrypt.genSalt(10);
+    usuario.password = await bcrypt.hash(password, salt);
+
+    //actualizar usuario
+    await usuario.save();
+
+    res.render("auth/confirmar-cuenta", {
+        pagina: "Cambio de password correcto",
+        mensaje: "El password fue modificado correctamente.",
+        error: false,
+    });
+};
+
 export {
     formularioLogin,
     formularioRegistro,
     formularioRecuperarPassword,
     registrar,
     confirmar,
+    resetPass,
+    comprobarToken,
+    nuevoPassword,
 };
