@@ -2,12 +2,91 @@ import { check, validationResult } from "express-validator";
 import bcrypt from "bcrypt";
 
 import Usuario from "../models/Usuario.js";
-import { generarId } from "../helpers/tokens.js";
+import { generarId, generarJWT } from "../helpers/tokens.js";
 import { emailRegistro, emailRecuperarPass } from "../helpers/emails.js";
+
 const formularioLogin = (req, res) => {
     res.render("auth/login", {
         pagina: "Iniciar Sesión",
+        csrfToken: req.csrfToken(),
     });
+};
+
+const autenticar = async (req, res) => {
+    //extraer los datos
+    const { email, password } = req.body;
+
+    //validar campos
+    await check("email").isEmail().withMessage("Email inválido").run(req);
+
+    await check("password")
+        .isLength({ min: 6 })
+        .withMessage("El password es obligatorio")
+        .run(req);
+
+    //verificar que no hay errores
+    let resultado = validationResult(req);
+
+    if (!resultado.isEmpty()) {
+        //hay errores
+        return res.render("auth/login", {
+            pagina: "Iniciar Sesión",
+            errores: resultado.array(),
+            csrfToken: req.csrfToken(),
+        });
+    }
+
+    //validar si existe el usuario
+    const usuario = await Usuario.findOne({ where: { email } });
+
+    if (!usuario) {
+        //hay errores
+        return res.render("auth/login", {
+            pagina: "Iniciar Sesión",
+            errores: [{ msg: "El usuario no existe" }],
+            csrfToken: req.csrfToken(),
+        });
+    }
+
+    //comprobar si el usuario esta confirmado
+
+    if (!usuario.confirmado) {
+        return res.render("auth/login", {
+            pagina: "Iniciar Sesión",
+            errores: [
+                {
+                    msg: "La cuenta no ha sido confirmada, sigue los pasos en tu correo electronico.",
+                },
+            ],
+            csrfToken: req.csrfToken(),
+        });
+    }
+
+    //revisar password
+
+    if (!usuario.verificarPassword(password)) {
+        return res.render("auth/login", {
+            pagina: "Iniciar Sesión",
+            errores: [
+                {
+                    msg: "Password incorrecto.",
+                },
+            ],
+            csrfToken: req.csrfToken(),
+        });
+    }
+
+    const token = generarJWT({ id: usuario.id, nombre: usuario.nombre });
+
+    //almacenar token en una cookie
+
+    return res
+        .cookie("_token", token, {
+            httpOnly: true,
+            //secure:true,
+            //sameSite:true  ---ambas opciones sirven cuando se tiene certificado
+        })
+        .redirect("/mis-propiedades");
 };
 
 const formularioRegistro = (req, res) => {
@@ -255,6 +334,7 @@ const nuevoPassword = async (req, res) => {
 
 export {
     formularioLogin,
+    autenticar,
     formularioRegistro,
     formularioRecuperarPassword,
     registrar,

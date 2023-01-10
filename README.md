@@ -11,9 +11,10 @@ express-validator
 sequelize hooks
 NodeMailer
 csurf (libreria anti CSRF)
-
+JSON Web token
 
 ## para ejecutar en otra máquina
+
 ```
 instalar vscode y syncronizar configuracion por github
 instalar git
