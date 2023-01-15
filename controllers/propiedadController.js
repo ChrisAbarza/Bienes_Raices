@@ -5,4 +5,13 @@ const admin = (req, res) => {
     });
 };
 
-export { admin };
+// obtener formulario para crear propiedad
+const crear = (req, res) => {
+    res.render("propiedades/crear", {
+        pagina: "Publicar Propiedad",
+        barra: true,
+        csrfToken: req.csrfToken(),
+    });
+};
+
+export { admin, crear };
