@@ -13,6 +13,7 @@ NodeMailer
 csurf (libreria anti CSRF)
 JSON Web token
 docker
+webpack (para compilar js)
 
 ## para ejecutar en otra máquina
 
