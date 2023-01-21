@@ -1,6 +1,5 @@
 import { validationResult } from "express-validator";
-import Precio from "../models/Precio.js";
-import Categoria from "../models/Categoria.js";
+import { Precio, Categoria, Propiedad } from "../models/index.js";
 
 const admin = (req, res) => {
     res.render("propiedades/admin", {
@@ -23,12 +22,14 @@ const crear = async (req, res) => {
         csrfToken: req.csrfToken(),
         precios,
         categorias,
+        datos: {},
     });
 };
 
 const guardar = async (req, res) => {
     //validacion de errores
     let resultado = validationResult(req);
+
     if (!resultado.isEmpty()) {
         const [precios, categorias] = await Promise.all([
             Precio.findAll(),
@@ -41,7 +42,39 @@ const guardar = async (req, res) => {
             csrfToken: req.csrfToken(),
             precios,
             categorias,
+            datos: req.body,
         });
+    }
+
+    //destructuring con reasignacion de nombres ej (categoria: categoriaId)
+    const {
+        titulo,
+        descripcion,
+        categoria: categoriaId,
+        precio: precioId,
+        habitaciones,
+        wc,
+        estacionamiento,
+        calle,
+        lat,
+        lng,
+    } = req.body;
+
+    try {
+        const propiedadGuardada = await Propiedad.create({
+            titulo,
+            descripcion,
+            categoriaId,
+            precioId,
+            habitaciones,
+            wc,
+            estacionamiento,
+            calle,
+            lat,
+            lng,
+        });
+    } catch (error) {
+        console.log(error);
     }
 };
 

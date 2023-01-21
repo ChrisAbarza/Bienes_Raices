@@ -1,6 +1,6 @@
 (function () {
-    const lat = -39.862847;
-    const lng = -72.810181;
+    const lat = document.querySelector("#lat").value || -39.862847;
+    const lng = document.querySelector("#lng").value || -72.810181;
     const ZOOM = 16;
     const mapa = L.map("mapa").setView([lat, lng], ZOOM);
 
