@@ -44,7 +44,7 @@ const Propiedad = db.define("propiedades", {
         type: DataTypes.STRING,
     },
     publicado: {
-        tipe: DataTypes.BOOLEAN,
+        type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
     },
