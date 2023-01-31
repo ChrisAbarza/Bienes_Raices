@@ -131,3 +131,6 @@ dist
 
 # DS_store mac
 .DS_store
+
+# carpeta uploads
+public/uploads

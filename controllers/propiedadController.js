@@ -4,7 +4,6 @@ import { Precio, Categoria, Propiedad } from "../models/index.js";
 const admin = (req, res) => {
     res.render("propiedades/admin", {
         pagina: "Mis Propiedades",
-        barra: true,
     });
 };
 
@@ -18,7 +17,6 @@ const crear = async (req, res) => {
     //pasar los datos a la vista
     res.render("propiedades/crear", {
         pagina: "Publicar Propiedad",
-        barra: true,
         csrfToken: req.csrfToken(),
         precios,
         categorias,
@@ -37,7 +35,6 @@ const guardar = async (req, res) => {
         ]);
         return res.render("propiedades/crear", {
             pagina: "Publicar Propiedad",
-            barra: true,
             errores: resultado.array(),
             csrfToken: req.csrfToken(),
             precios,
@@ -60,6 +57,8 @@ const guardar = async (req, res) => {
         lng,
     } = req.body;
 
+    const { id: usuarioId } = req.usuario;
+
     try {
         const propiedadGuardada = await Propiedad.create({
             titulo,
@@ -72,10 +71,42 @@ const guardar = async (req, res) => {
             calle,
             lat,
             lng,
+            usuarioId,
+            imagen: "",
         });
+
+        const { id: propiedadId } = propiedadGuardada;
+
+        res.redirect(`/propiedades/agregar-imagen/${propiedadId}`);
     } catch (error) {
         console.log(error);
     }
 };
 
-export { admin, crear, guardar };
+const agregarImagen = async (req, res) => {
+    // validar que la propiedad exista y no esté publicada
+    const { id } = req.params;
+
+    const propiedad = await Propiedad.findByPk(id);
+
+    if (!propiedad) {
+        return res.redirect("/mis-propiedades");
+    }
+
+    if (propiedad.publicado) {
+        return res.redirect("/mis-propiedades");
+    }
+
+    //validar que la propiedad pertenezca al usuario autenticado
+    if (propiedad.usuarioId.toString() !== req.usuario.id.toString()) {
+        return res.redirect("/mis-propiedades");
+    }
+
+    res.render("propiedades/agregar-imagen", {
+        pagina: `Agregar Imagen a: ${propiedad.titulo}`,
+        csrfToken: req.csrfToken(),
+        propiedad,
+    });
+};
+
+export { admin, crear, guardar, agregarImagen };
